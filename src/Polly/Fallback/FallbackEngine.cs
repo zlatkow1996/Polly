@@ -5,14 +5,15 @@ namespace Polly.Fallback
 {
     internal static class FallbackEngine
     {
-        internal static TResult Implementation<TResult>(
-            Func<Context, CancellationToken, TResult> action,
+        internal static TResult Implementation<TExecutable, TResult>(
+            in TExecutable action,
             Context context,
             CancellationToken cancellationToken,
             ExceptionPredicates shouldHandleExceptionPredicates,
             ResultPredicates<TResult> shouldHandleResultPredicates,
             Action<DelegateResult<TResult>, Context> onFallback,
             Func<DelegateResult<TResult>, Context, CancellationToken, TResult> fallbackAction)
+            where TExecutable : ISyncExecutable<TResult>
         {
             DelegateResult<TResult> delegateOutcome;
 
@@ -20,7 +21,7 @@ namespace Polly.Fallback
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                TResult result = action(context, cancellationToken);
+                TResult result = action.Execute(context, cancellationToken);
 
                 if (!shouldHandleResultPredicates.AnyMatch(result))
                 {

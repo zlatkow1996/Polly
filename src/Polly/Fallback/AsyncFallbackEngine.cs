@@ -6,15 +6,16 @@ namespace Polly.Fallback
 {
     internal class AsyncFallbackEngine
     {
-        internal static async Task<TResult> ImplementationAsync<TResult>(
-            Func<Context, CancellationToken, Task<TResult>> action,
+        internal static async Task<TResult> ImplementationAsync<TExecutableAsync, TResult>(
+            TExecutableAsync action,
             Context context,
             CancellationToken cancellationToken,
+            bool continueOnCapturedContext,
             ExceptionPredicates shouldHandleExceptionPredicates,
             ResultPredicates<TResult> shouldHandleResultPredicates,
             Func<DelegateResult<TResult>, Context, Task> onFallbackAsync,
-            Func<DelegateResult<TResult>, Context, CancellationToken, Task<TResult>> fallbackAction,
-            bool continueOnCapturedContext)
+            Func<DelegateResult<TResult>, Context, CancellationToken, Task<TResult>> fallbackAction)
+            where TExecutableAsync : IAsyncExecutable<TResult>
         {
             DelegateResult<TResult> delegateOutcome;
 
@@ -22,7 +23,7 @@ namespace Polly.Fallback
             {
                 cancellationToken.ThrowIfCancellationRequested();
 
-                TResult result = await action(context, cancellationToken).ConfigureAwait(continueOnCapturedContext);
+                TResult result = await action.ExecuteAsync(context, cancellationToken, continueOnCapturedContext).ConfigureAwait(continueOnCapturedContext);
 
                 if (!shouldHandleResultPredicates.AnyMatch(result))
                 {

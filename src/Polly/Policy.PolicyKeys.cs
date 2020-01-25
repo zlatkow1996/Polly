@@ -21,7 +21,7 @@ namespace Polly
         /// Sets the PolicyKey for this <see cref="Policy"/> instance.
         /// <remarks>Must be called before the policy is first used.  Can only be set once.</remarks>
         /// </summary>
-        /// <param name="policyKey">The unique, used-definable key to assign to this <see cref="Policy"/> instance.</param>
+        /// <param name="policyKey">The unique, used-definable key to assign to this <see cref="ISyncPolicy"/> instance.</param>
         ISyncPolicy ISyncPolicy.WithPolicyKey(String policyKey)
         {
             if (policyKeyInternal != null) throw PolicyKeyMustBeImmutableException;

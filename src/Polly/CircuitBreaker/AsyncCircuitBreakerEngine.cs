@@ -7,14 +7,15 @@ namespace Polly.CircuitBreaker
 {
     internal class AsyncCircuitBreakerEngine
     {
-        internal static async Task<TResult> ImplementationAsync<TResult>(
-            Func<Context, CancellationToken, Task<TResult>> action, 
+        internal static async Task<TResult> ImplementationAsync<TExecutableAsync, TResult>(
+            TExecutableAsync action,
             Context context,
             CancellationToken cancellationToken,
             bool continueOnCapturedContext,
             ExceptionPredicates shouldHandleExceptionPredicates, 
             ResultPredicates<TResult> shouldHandleResultPredicates,
             ICircuitController<TResult> breakerController)
+            where TExecutableAsync : IAsyncExecutable<TResult>
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -22,7 +23,7 @@ namespace Polly.CircuitBreaker
 
             try
             {
-                TResult result = await action(context, cancellationToken).ConfigureAwait(continueOnCapturedContext);
+                TResult result = await action.ExecuteAsync(context, cancellationToken, continueOnCapturedContext).ConfigureAwait(continueOnCapturedContext);
 
                 if (shouldHandleResultPredicates.AnyMatch(result))
                 {

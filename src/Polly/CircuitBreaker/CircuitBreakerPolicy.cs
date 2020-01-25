@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using Polly.Utilities;
 using System.Threading;
 
 namespace Polly.CircuitBreaker
@@ -10,11 +9,11 @@ namespace Polly.CircuitBreaker
     /// </summary>
     public class CircuitBreakerPolicy : Policy, ISyncCircuitBreakerPolicy
     {
-        internal readonly ICircuitController<EmptyStruct> _breakerController;
+        internal readonly ICircuitController<object> _breakerController;
 
         internal CircuitBreakerPolicy(
             PolicyBuilder policyBuilder,
-            ICircuitController<EmptyStruct> breakerController
+            ICircuitController<object> breakerController
             ) : base(policyBuilder)
             => _breakerController = breakerController;
 
@@ -41,15 +40,27 @@ namespace Polly.CircuitBreaker
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation<TResult>(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable, TResult>(in TExecutable action, Context context,
+                CancellationToken cancellationToken)
+            => ImplementationSyncInternal<TExecutable, TResult>(action, context, cancellationToken);
+
+        // This additional private method is necessary, because _breakerController is generic in <object>.
+        // We therefore have to convert the whole execution to object.
+        // It could be removed if ICircuitController<TResult> was refactored to not be generic in TResult.
+        // Which could be done by moving onBreak (and similar) out of ICircuitController<>, instead to parameters passed to CircuitBreakerEngine.Implementation<>() (as retry policy does)
+        // and by removing the LastHandledResult property.
+        // Further, we need to drop the 'in' parameter on TExecutable action, to use action in the lambda.  
+        // An allocation is introduced by the closure over action.
+        private TResult ImplementationSyncInternal<TExecutable, TResult>(TExecutable action, Context context, CancellationToken cancellationToken)
+            where TExecutable : ISyncExecutable<TResult>
         {
             TResult result = default;
-            CircuitBreakerEngine.Implementation<EmptyStruct>(
-                (ctx, ct) => { result = action(ctx, ct); return EmptyStruct.Instance; },
+            CircuitBreakerEngine.Implementation<ISyncExecutable<object>, object>(
+                new SyncExecutableAction((ctx, ct) => result = action.Execute(ctx, ct)),
                 context,
                 cancellationToken,
                 ExceptionPredicates,
-                ResultPredicates<EmptyStruct>.None,
+                ResultPredicates<object>.None,
                 _breakerController);
             return result;
         }
@@ -98,7 +109,7 @@ namespace Polly.CircuitBreaker
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
             => CircuitBreakerEngine.Implementation(
                 action,
                 context,

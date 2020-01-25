@@ -5,13 +5,14 @@ namespace Polly.Bulkhead
 {
     internal static class BulkheadEngine
     {
-        internal static TResult Implementation<TResult>(
-            Func<Context, CancellationToken, TResult> action,
+        internal static TResult Implementation<TExecutable, TResult>(
+            in TExecutable action,
             Context context,
             Action<Context> onBulkheadRejected,
             SemaphoreSlim maxParallelizationSemaphore,
             SemaphoreSlim maxQueuedActionsSemaphore,
             CancellationToken cancellationToken)
+            where TExecutable : ISyncExecutable<TResult>
         {
             if (!maxQueuedActionsSemaphore.Wait(TimeSpan.Zero, cancellationToken))
             {
@@ -24,7 +25,7 @@ namespace Polly.Bulkhead
                 maxParallelizationSemaphore.Wait(cancellationToken);
                 try
                 {
-                    return action(context, cancellationToken);
+                    return action.Execute(context, cancellationToken);
                 }
                 finally
                 {

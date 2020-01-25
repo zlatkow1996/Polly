@@ -42,32 +42,28 @@ namespace Polly.Caching
         }
 
         /// <inheritdoc/>
-        protected override Task ImplementationAsync(
-            Func<Context, CancellationToken, Task> action,
-            Context context,
-            CancellationToken cancellationToken,
+        protected override Task AsyncNonGenericImplementation<TExecutableAsync>(in TExecutableAsync action, Context context, CancellationToken cancellationToken,
             bool continueOnCapturedContext)
         {
             // Pass-through/NOOP policy action, for void-returning executions through the cache policy.
-            return action(context, cancellationToken);
+            return action.ExecuteAsync(context, cancellationToken, continueOnCapturedContext);
         }
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override Task<TResult> ImplementationAsync<TResult>(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync, TResult>(TExecutableAsync action, Context context, CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
-            return AsyncCacheEngine.ImplementationAsync<TResult>(
-                _asyncCacheProvider.AsyncFor<TResult>(), 
-                _ttlStrategy.For<TResult>(), 
-                _cacheKeyStrategy, 
-                action, 
-                context, 
+            return AsyncCacheEngine.ImplementationAsync<TExecutableAsync, TResult>(
+                _asyncCacheProvider.AsyncFor<TResult>(),
+                _ttlStrategy.For<TResult>(),
+                _cacheKeyStrategy,
+                action,
+                context,
                 cancellationToken,
-                continueOnCapturedContext, 
-                _onCacheGet, 
-                _onCacheMiss, 
-                _onCachePut, 
+                continueOnCapturedContext,
+                _onCacheGet,
+                _onCacheMiss,
+                _onCachePut,
                 _onCacheGetError,
                 _onCachePutError);
         }
@@ -79,7 +75,7 @@ namespace Polly.Caching
     /// <typeparam name="TResult">The return type of delegates which may be executed through the policy.</typeparam>
     public class AsyncCachePolicy<TResult> : AsyncPolicy<TResult>, IAsyncCachePolicy<TResult>
     {
-        private IAsyncCacheProvider<TResult> _asyncCacheProvider;
+        private readonly IAsyncCacheProvider<TResult> _asyncCacheProvider;
         private readonly ITtlStrategy<TResult> _ttlStrategy;
         private readonly Func<Context, string> _cacheKeyStrategy;
 
@@ -112,10 +108,9 @@ namespace Polly.Caching
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override Task<TResult> ImplementationAsync(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync>(TExecutableAsync action, Context context, CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
-            return AsyncCacheEngine.ImplementationAsync<TResult>(
+            return AsyncCacheEngine.ImplementationAsync<TExecutableAsync, TResult>(
                 _asyncCacheProvider,
                 _ttlStrategy,
                 _cacheKeyStrategy,

@@ -6,13 +6,14 @@ namespace Polly.CircuitBreaker
 {
     internal class CircuitBreakerEngine
     {
-        internal static TResult Implementation<TResult>(
-            Func<Context, CancellationToken, TResult> action,
+        internal static TResult Implementation<TExecutable, TResult>(
+            in TExecutable action,
             Context context,
             CancellationToken cancellationToken,
             ExceptionPredicates shouldHandleExceptionPredicates, 
             ResultPredicates<TResult> shouldHandleResultPredicates, 
             ICircuitController<TResult> breakerController)
+            where TExecutable : ISyncExecutable<TResult>
         {
             cancellationToken.ThrowIfCancellationRequested();
 
@@ -20,7 +21,7 @@ namespace Polly.CircuitBreaker
 
             try
             {
-                TResult result = action(context, cancellationToken);
+                TResult result = action.Execute(context, cancellationToken);
 
                 if (shouldHandleResultPredicates.AnyMatch(result))
                 {

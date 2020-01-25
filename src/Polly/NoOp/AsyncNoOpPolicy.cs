@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -16,9 +15,12 @@ namespace Polly.NoOp
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override Task<TResult> ImplementationAsync<TResult>( Func<Context, CancellationToken,Task<TResult>> action, Context context, CancellationToken cancellationToken,
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync, TResult>(
+            TExecutableAsync action,
+            Context context,
+            CancellationToken cancellationToken,
             bool continueOnCapturedContext)
-            => NoOpEngine.ImplementationAsync(action, context, cancellationToken, continueOnCapturedContext);
+            => AsyncNoOpEngine.ImplementationAsync<TExecutableAsync, TResult>(action, context, cancellationToken, continueOnCapturedContext);
     }
 
     /// <summary>
@@ -33,8 +35,11 @@ namespace Polly.NoOp
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override Task<TResult> ImplementationAsync(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync>(
+            TExecutableAsync action,
+            Context context,
+            CancellationToken cancellationToken,
             bool continueOnCapturedContext)
-            => NoOpEngine.ImplementationAsync(action, context, cancellationToken, continueOnCapturedContext);
+            => AsyncNoOpEngine.ImplementationAsync<TExecutableAsync, TResult>(action, context, cancellationToken, continueOnCapturedContext);
     }
 }

@@ -10,9 +10,9 @@ namespace Polly.Timeout
     /// </summary>
     public class TimeoutPolicy : Policy, ISyncTimeoutPolicy
     {
-        private Func<Context, TimeSpan> _timeoutProvider;
-        private TimeoutStrategy _timeoutStrategy;
-        private Action<Context, TimeSpan, Task, Exception> _onTimeout;
+        private readonly Func<Context, TimeSpan> _timeoutProvider;
+        private readonly TimeoutStrategy _timeoutStrategy;
+        private readonly Action<Context, TimeSpan, Task, Exception> _onTimeout;
 
         internal TimeoutPolicy(
             Func<Context, TimeSpan> timeoutProvider,
@@ -26,8 +26,9 @@ namespace Polly.Timeout
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation<TResult>(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
-            => TimeoutEngine.Implementation(
+        protected override TResult SyncGenericImplementation<TExecutable, TResult>(in TExecutable action, Context context,
+            CancellationToken cancellationToken)
+            => TimeoutEngine.Implementation<TExecutable, TResult>(
                 action,
                 context,
                 cancellationToken,
@@ -42,9 +43,9 @@ namespace Polly.Timeout
     /// <typeparam name="TResult">The return type of delegates which may be executed through the policy.</typeparam>
     public class TimeoutPolicy<TResult> : Policy<TResult>, ISyncTimeoutPolicy<TResult>
     {
-        private Func<Context, TimeSpan> _timeoutProvider;
-        private TimeoutStrategy _timeoutStrategy;
-        private Action<Context, TimeSpan, Task, Exception> _onTimeout;
+        private readonly Func<Context, TimeSpan> _timeoutProvider;
+        private readonly TimeoutStrategy _timeoutStrategy;
+        private readonly Action<Context, TimeSpan, Task, Exception> _onTimeout;
 
         internal TimeoutPolicy(
             Func<Context, TimeSpan> timeoutProvider,
@@ -57,8 +58,8 @@ namespace Polly.Timeout
         }
 
         /// <inheritdoc/>
-        protected override TResult Implementation(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
-            => TimeoutEngine.Implementation(
+        protected override TResult SyncGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
+            => TimeoutEngine.Implementation<TExecutable, TResult>(
                 action,
                 context,
                 cancellationToken,

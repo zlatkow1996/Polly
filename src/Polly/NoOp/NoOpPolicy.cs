@@ -1,5 +1,4 @@
-﻿using System;
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Threading;
 
 namespace Polly.NoOp
@@ -15,8 +14,10 @@ namespace Polly.NoOp
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation<TResult>(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
-            => NoOpEngine.Implementation(action, context, cancellationToken);
+        protected override TResult SyncGenericImplementation<TExecutable, TResult>(in TExecutable action, Context context, CancellationToken cancellationToken)
+        {
+            return NoOpEngine.Implementation<TExecutable, TResult>(action, context, cancellationToken);
+        }
     }
 
     /// <summary>
@@ -31,7 +32,9 @@ namespace Polly.NoOp
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
-            => NoOpEngine.Implementation(action, context, cancellationToken);
+        protected override TResult SyncGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
+        {
+            return NoOpEngine.Implementation<TExecutable, TResult>(action, context, cancellationToken);
+        }
     }
 }

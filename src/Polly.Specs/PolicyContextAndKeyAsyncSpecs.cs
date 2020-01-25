@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using FluentAssertions;
 using Polly.Specs.Helpers;
-using Polly.Utilities;
 using Xunit;
 
 namespace Polly.Specs
@@ -16,7 +15,7 @@ namespace Polly.Specs
         {
             var policy = Policy.Handle<Exception>().RetryAsync().WithPolicyKey(Guid.NewGuid().ToString());
 
-            policy.Should().BeAssignableTo<AsyncPolicy>();
+            policy.Should().BeAssignableTo<IAsyncPolicy>();
         }
 
         [Fact]
@@ -199,7 +198,7 @@ namespace Polly.Specs
         {
             var policy = Policy.HandleResult<int>(0).RetryAsync().WithPolicyKey(Guid.NewGuid().ToString());
 
-            policy.Should().BeAssignableTo<AsyncPolicy<int>>();
+            policy.Should().BeAssignableTo<IAsyncPolicy<int>>();
         }
 
         [Fact]

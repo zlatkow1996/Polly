@@ -18,10 +18,10 @@ namespace Polly.Specs.Helpers.Custom.PreExecute
             _preExecute = preExecute ?? throw new ArgumentNullException(nameof(preExecute));
         }
 
-        protected override Task<TResult> ImplementationAsync<TResult>(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync, TResult>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
-            return AsyncPreExecuteEngine.ImplementationAsync(_preExecute, action, context, cancellationToken, continueOnCapturedContext);
+            return AsyncPreExecuteEngine.ImplementationAsync<TExecutableAsync, TResult>(action, context, cancellationToken, continueOnCapturedContext, _preExecute);
         }
     }
 
@@ -39,10 +39,10 @@ namespace Polly.Specs.Helpers.Custom.PreExecute
             _preExecute = preExecute ?? throw new ArgumentNullException(nameof(preExecute));
         }
 
-        protected override Task<TResult> ImplementationAsync(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
-            return AsyncPreExecuteEngine.ImplementationAsync(_preExecute, action, context, cancellationToken, continueOnCapturedContext);
+            return AsyncPreExecuteEngine.ImplementationAsync<TExecutableAsync, TResult>(action, context, cancellationToken, continueOnCapturedContext, _preExecute);
         }
     }
 }

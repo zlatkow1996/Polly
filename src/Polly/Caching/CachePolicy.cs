@@ -41,15 +41,15 @@ namespace Polly.Caching
         }
 
         /// <inheritdoc/>
-        protected override void Implementation(Action<Context, CancellationToken> action, Context context, CancellationToken cancellationToken)
+        protected override void SyncNonGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
             // Pass-through/NOOP policy action, for void-returning calls through a cache policy.
-            => action(context, cancellationToken);
+            => action.Execute(context, cancellationToken);
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation<TResult>(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable, TResult>(in TExecutable action, Context context, CancellationToken cancellationToken)
         {
-            return CacheEngine.Implementation<TResult>(
+            return CacheEngine.Implementation<TExecutable, TResult>(
                 _syncCacheProvider.For<TResult>(),
                 _ttlStrategy.For<TResult>(),
                 _cacheKeyStrategy,
@@ -70,9 +70,9 @@ namespace Polly.Caching
     /// <typeparam name="TResult">The return type of delegates which may be executed through the policy.</typeparam>
     public class CachePolicy<TResult> : Policy<TResult>, ISyncCachePolicy<TResult>
     {
-        private ISyncCacheProvider<TResult> _syncCacheProvider;
-        private ITtlStrategy<TResult> _ttlStrategy;
-        private Func<Context, string> _cacheKeyStrategy;
+        private readonly ISyncCacheProvider<TResult> _syncCacheProvider;
+        private readonly ITtlStrategy<TResult> _ttlStrategy;
+        private readonly Func<Context, string> _cacheKeyStrategy;
 
         private readonly Action<Context, string> _onCacheGet;
         private readonly Action<Context, string> _onCacheMiss;
@@ -103,7 +103,7 @@ namespace Polly.Caching
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
             => CacheEngine.Implementation(
                 _syncCacheProvider,
                 _ttlStrategy,

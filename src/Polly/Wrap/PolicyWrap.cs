@@ -9,8 +9,8 @@ namespace Polly.Wrap
     /// </summary>
     public partial class PolicyWrap : Policy, ISyncPolicyWrap
     {
-        private ISyncPolicy _outer;
-        private ISyncPolicy _inner;
+        private readonly ISyncPolicy _outer;
+        private readonly ISyncPolicy _inner;
 
         /// <summary>
         /// Returns the outer <see cref="IsPolicy"/> in this <see cref="IPolicyWrap"/>
@@ -22,8 +22,8 @@ namespace Polly.Wrap
         /// </summary>
         public IsPolicy Inner => _inner;
 
-        internal PolicyWrap(Policy outer, ISyncPolicy inner) 
-            : base(outer.ExceptionPredicates)
+        internal PolicyWrap(ISyncPolicy outer, ISyncPolicy inner) 
+            : base(((IExceptionPredicates)outer).PredicatesInternal)
         {
             _outer = outer;
             _inner = inner;
@@ -31,7 +31,7 @@ namespace Polly.Wrap
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override void Implementation(Action<Context, CancellationToken> action, Context context, CancellationToken cancellationToken)
+        protected override void SyncNonGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
             => PolicyWrapEngine.Implementation(
                 action,
                 context,
@@ -42,8 +42,9 @@ namespace Polly.Wrap
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override TResult Implementation<TResult>(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
-            => PolicyWrapEngine.Implementation<TResult>(
+        protected override TResult SyncGenericImplementation<TExecutable, TResult>(in TExecutable action, Context context,
+            CancellationToken cancellationToken)
+            => PolicyWrapEngine.Implementation<TExecutable, TResult>(
                 action,
                 context,
                 cancellationToken,
@@ -58,11 +59,11 @@ namespace Polly.Wrap
     /// <typeparam name="TResult">The return type of delegates which may be executed through the policy.</typeparam>
     public partial class PolicyWrap<TResult> : Policy<TResult>, ISyncPolicyWrap<TResult>
     {
-        private ISyncPolicy _outerNonGeneric;
-        private ISyncPolicy _innerNonGeneric;
+        private readonly ISyncPolicy _outerNonGeneric;
+        private readonly ISyncPolicy _innerNonGeneric;
 
-        private ISyncPolicy<TResult> _outerGeneric;
-        private ISyncPolicy<TResult> _innerGeneric;
+        private readonly ISyncPolicy<TResult> _outerGeneric;
+        private readonly ISyncPolicy<TResult> _innerGeneric;
 
         /// <summary>
         /// Returns the outer <see cref="IsPolicy"/> in this <see cref="IPolicyWrap{TResult}"/>
@@ -74,35 +75,35 @@ namespace Polly.Wrap
         /// </summary>
         public IsPolicy Inner => (IsPolicy)_innerGeneric ?? _innerNonGeneric;
 
-        internal PolicyWrap(Policy outer, ISyncPolicy<TResult> inner)
-            : base(outer.ExceptionPredicates, ResultPredicates<TResult>.None)
+        internal PolicyWrap(ISyncPolicy outer, ISyncPolicy<TResult> inner)
+            : base(((IExceptionPredicates)outer).PredicatesInternal, ResultPredicates<TResult>.None)
         {
             _outerNonGeneric = outer;
             _innerGeneric = inner;
         }
 
-        internal PolicyWrap(Policy<TResult> outer, ISyncPolicy inner)
-            : base(outer.ExceptionPredicates, outer.ResultPredicates)
+        internal PolicyWrap(ISyncPolicy<TResult> outer, ISyncPolicy inner)
+            : base(((IExceptionPredicates)outer).PredicatesInternal, ((IResultPredicates<TResult>)outer).PredicatesInternal)
         {
             _outerGeneric = outer;
             _innerNonGeneric = inner;
         }
 
-        internal PolicyWrap(Policy<TResult> outer, ISyncPolicy<TResult> inner)
-            : base(outer.ExceptionPredicates, outer.ResultPredicates)
+        internal PolicyWrap(ISyncPolicy<TResult> outer, ISyncPolicy<TResult> inner)
+            : base(((IExceptionPredicates)outer).PredicatesInternal, ((IResultPredicates<TResult>)outer).PredicatesInternal)
         {
             _outerGeneric = outer;
             _innerGeneric = inner;
         }
 
         /// <inheritdoc/>
-        protected override TResult Implementation(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
         {
             if (_outerNonGeneric != null)
             {
                 if (_innerNonGeneric != null)
                 {
-                    return PolicyWrapEngine.Implementation<TResult>(
+                    return PolicyWrapEngine.Implementation<TExecutable, TResult>(
                         action,
                         context,
                         cancellationToken,
@@ -112,7 +113,7 @@ namespace Polly.Wrap
                 }
                 else if (_innerGeneric != null)
                 {
-                    return PolicyWrapEngine.Implementation<TResult>(
+                    return PolicyWrapEngine.Implementation<TExecutable, TResult>(
                         action,
                         context,
                         cancellationToken,
@@ -130,7 +131,7 @@ namespace Polly.Wrap
             {
                 if (_innerNonGeneric != null)
                 {
-                    return PolicyWrapEngine.Implementation<TResult>(
+                    return PolicyWrapEngine.Implementation<TExecutable, TResult>(
                         action,
                         context,
                         cancellationToken,
@@ -141,7 +142,7 @@ namespace Polly.Wrap
                 }
                 else if (_innerGeneric != null)
                 {
-                    return PolicyWrapEngine.Implementation<TResult>(
+                    return PolicyWrapEngine.Implementation<TExecutable, TResult>(
                         action,
                         context,
                         cancellationToken,

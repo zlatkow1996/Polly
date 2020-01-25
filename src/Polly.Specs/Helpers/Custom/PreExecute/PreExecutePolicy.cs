@@ -17,9 +17,10 @@ namespace Polly.Specs.Helpers.Custom.PreExecute
             _preExecute = preExecute ?? throw new ArgumentNullException(nameof(preExecute));
         }
 
-        protected override TResult Implementation<TResult>(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable, TResult>(in TExecutable action, Context context,
+            CancellationToken cancellationToken)
         {
-            return PreExecuteEngine.Implementation(_preExecute, action, context, cancellationToken);
+            return PreExecuteEngine.Implementation<TExecutable, TResult>(action, context, cancellationToken, _preExecute);
         }
     }
 
@@ -37,9 +38,9 @@ namespace Polly.Specs.Helpers.Custom.PreExecute
             _preExecute = preExecute ?? throw new ArgumentNullException(nameof(preExecute));
         }
 
-        protected override TResult Implementation(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
         {
-            return PreExecuteEngine.Implementation(_preExecute, action, context, cancellationToken);
+            return PreExecuteEngine.Implementation<TExecutable, TResult>(action, context, cancellationToken, _preExecute);
         }
     }
 }

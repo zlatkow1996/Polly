@@ -13,7 +13,7 @@ namespace Polly.Bulkhead
         private readonly SemaphoreSlim _maxParallelizationSemaphore;
         private readonly SemaphoreSlim _maxQueuedActionsSemaphore;
         private readonly int _maxQueueingActions;
-        private Func<Context, Task> _onBulkheadRejectedAsync;
+        private readonly Func<Context, Task> _onBulkheadRejectedAsync;
 
         internal AsyncBulkheadPolicy(
             int maxParallelization,
@@ -38,10 +38,10 @@ namespace Polly.Bulkhead
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override Task<TResult> ImplementationAsync<TResult>(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync, TResult>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
-            return AsyncBulkheadEngine.ImplementationAsync(action, context, _onBulkheadRejectedAsync, _maxParallelizationSemaphore, _maxQueuedActionsSemaphore, cancellationToken, continueOnCapturedContext);
+            return AsyncBulkheadEngine.ImplementationAsync<TExecutableAsync, TResult>(action, context, _onBulkheadRejectedAsync, _maxParallelizationSemaphore, _maxQueuedActionsSemaphore, cancellationToken, continueOnCapturedContext);
         }
 
         /// <inheritdoc/>
@@ -61,7 +61,7 @@ namespace Polly.Bulkhead
         private readonly SemaphoreSlim _maxParallelizationSemaphore;
         private readonly SemaphoreSlim _maxQueuedActionsSemaphore;
         private readonly int _maxQueueingActions;
-        private Func<Context, Task> _onBulkheadRejectedAsync;
+        private readonly Func<Context, Task> _onBulkheadRejectedAsync;
 
         internal AsyncBulkheadPolicy(
             int maxParallelization,
@@ -76,9 +76,10 @@ namespace Polly.Bulkhead
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override Task<TResult> ImplementationAsync(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken, bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
-            return AsyncBulkheadEngine.ImplementationAsync(action, context, _onBulkheadRejectedAsync, _maxParallelizationSemaphore, _maxQueuedActionsSemaphore, cancellationToken, continueOnCapturedContext);
+            return AsyncBulkheadEngine.ImplementationAsync<TExecutableAsync, TResult>(action, context, _onBulkheadRejectedAsync, _maxParallelizationSemaphore, _maxQueuedActionsSemaphore, cancellationToken, continueOnCapturedContext);
         }
 
         /// <summary>

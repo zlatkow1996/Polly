@@ -12,7 +12,7 @@ namespace Polly.Specs.Registry
 {
     public class PolicyRegistrySpecs
     {
-        IPolicyRegistry<string> _registry;
+        readonly IPolicyRegistry<string> _registry;
 
         public PolicyRegistrySpecs()
         {
@@ -128,7 +128,7 @@ namespace Polly.Specs.Registry
 
             _registry.Count.Should().Be(1);
 
-            _registry.Get<Policy>(key).Should().BeSameAs(policy_new);
+            _registry.Get<ISyncPolicy>(key).Should().BeSameAs(policy_new);
         }
 
         [Fact]
@@ -143,7 +143,7 @@ namespace Polly.Specs.Registry
 
             _registry.Count.Should().Be(1);
 
-            _registry.Get<Policy<ResultPrimitive>>(key).Should().BeSameAs(policy_new);
+            _registry.Get<ISyncPolicy<ResultPrimitive>>(key).Should().BeSameAs(policy_new);
         }
         
         [Fact]
@@ -173,10 +173,9 @@ namespace Polly.Specs.Registry
         {
             ISyncPolicy policy = Policy.NoOp();
             string key = Guid.NewGuid().ToString();
-            ISyncPolicy outPolicy = null;
 
             _registry.Add(key, policy);
-            _registry.TryGet(key, out outPolicy).Should().BeTrue();
+            _registry.TryGet(key, out ISyncPolicy outPolicy).Should().BeTrue();
             outPolicy.Should().BeSameAs(policy);
         }
 
@@ -185,10 +184,9 @@ namespace Polly.Specs.Registry
         {
             ISyncPolicy<ResultPrimitive> policy = Policy<ResultPrimitive>.HandleResult(ResultPrimitive.Fault).Retry();
             string key = Guid.NewGuid().ToString();
-            ISyncPolicy<ResultPrimitive> outPolicy = null;
 
             _registry.Add(key, policy);
-            _registry.TryGet(key, out outPolicy).Should().BeTrue();
+            _registry.TryGet(key, out ISyncPolicy<ResultPrimitive> outPolicy).Should().BeTrue();
             outPolicy.Should().BeSameAs(policy);
         }
 
@@ -197,10 +195,9 @@ namespace Polly.Specs.Registry
         {
             ISyncPolicy<ResultPrimitive> policy = Policy<ResultPrimitive>.HandleResult(ResultPrimitive.Fault).Retry();
             string key = Guid.NewGuid().ToString();
-            ISyncPolicy<ResultPrimitive> outPolicy = null;
 
             _registry.Add(key, policy);
-            _registry.TryGet(key, out outPolicy).Should().BeTrue();
+            _registry.TryGet(key, out ISyncPolicy<ResultPrimitive> outPolicy).Should().BeTrue();
             outPolicy.Should().BeSameAs(policy);
         }
 
@@ -211,7 +208,7 @@ namespace Polly.Specs.Registry
             string key = Guid.NewGuid().ToString();
 
             _registry.Add(key, policy);
-            _registry.Get<Policy>(key).Should().BeSameAs(policy);
+            _registry.Get<ISyncPolicy>(key).Should().BeSameAs(policy);
         }
 
         [Fact]
@@ -221,7 +218,7 @@ namespace Polly.Specs.Registry
             string key = Guid.NewGuid().ToString();
 
             _registry.Add(key, policy);
-            _registry.Get<Policy<ResultPrimitive>>(key).Should().BeSameAs(policy);
+            _registry.Get<ISyncPolicy<ResultPrimitive>>(key).Should().BeSameAs(policy);
         }
 
         [Fact]
@@ -308,7 +305,7 @@ namespace Polly.Specs.Registry
         {
             string key = Guid.NewGuid().ToString();
             ISyncPolicy policy = null;
-            _registry.Invoking(r => policy = r.Get<Policy>(key))
+            _registry.Invoking(r => policy = r.Get<ISyncPolicy>(key))
                 .Should().Throw<KeyNotFoundException>();
         }
 
@@ -317,7 +314,7 @@ namespace Polly.Specs.Registry
         {
             string key = Guid.NewGuid().ToString();
             ISyncPolicy<ResultPrimitive> policy = null;
-            _registry.Invoking(r => policy = r.Get<Policy<ResultPrimitive>>(key))
+            _registry.Invoking(r => policy = r.Get<ISyncPolicy<ResultPrimitive>>(key))
                 .Should().Throw<KeyNotFoundException>();
         }
 
@@ -345,7 +342,7 @@ namespace Polly.Specs.Registry
         {
             string key = null;
             ISyncPolicy policy = null;
-            _registry.Invoking(r => policy = r.Get<Policy>(key))
+            _registry.Invoking(r => policy = r.Get<ISyncPolicy>(key))
                 .Should().Throw<ArgumentNullException>();
         }
 
@@ -354,7 +351,7 @@ namespace Polly.Specs.Registry
         {
             string key = null;
             ISyncPolicy<ResultPrimitive> policy = null;
-            _registry.Invoking(r => policy = r.Get<Policy<ResultPrimitive>>(key))
+            _registry.Invoking(r => policy = r.Get<ISyncPolicy<ResultPrimitive>>(key))
                 .Should().Throw<ArgumentNullException>();
         }
 

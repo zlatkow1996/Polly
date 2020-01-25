@@ -2,6 +2,9 @@
 
 namespace Polly
 {
+    /// <summary>
+    /// Transient exception handling policies that can be applied to synchronous delegates
+    /// </summary>
     public partial class Policy
     {
 
@@ -58,6 +61,9 @@ namespace Polly
             => HandleResult(new Func<TResult, bool>(r => (r != null && r.Equals(result)) || (r == null && result == null)));
     }
 
+    /// <summary>
+    /// Transient fault handling policies that can be applied to delegates returning results of type <typeparamref name="TResult"/>
+    /// </summary>
     public partial class Policy<TResult>
     {
         /// <summary>

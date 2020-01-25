@@ -13,18 +13,16 @@ namespace Polly.Specs.Helpers.Custom.AddBehaviourIfHandle
             _behaviourIfHandle = behaviourIfHandle ?? throw new ArgumentNullException(nameof(behaviourIfHandle));
         }
 
-        protected override TResult Implementation<TResult>(
-            Func<Context, CancellationToken, TResult> action, 
-            Context context, 
+        protected override TResult SyncGenericImplementation<TExecutable, TResult>(in TExecutable action, Context context,
             CancellationToken cancellationToken)
         {
-            return AddBehaviourIfHandleEngine.Implementation(
-                ExceptionPredicates,
-                ResultPredicates<TResult>.None, 
-                outcome => _behaviourIfHandle(outcome.Exception),
+            return AddBehaviourIfHandleEngine.Implementation<TExecutable, TResult>(
                 action,
                 context,
-                cancellationToken
+                cancellationToken,
+                ExceptionPredicates,
+                ResultPredicates<TResult>.None,
+                outcome => _behaviourIfHandle(outcome.Exception)
             );
         }
     }
@@ -41,15 +39,15 @@ namespace Polly.Specs.Helpers.Custom.AddBehaviourIfHandle
             _behaviourIfHandle = behaviourIfHandle ?? throw new ArgumentNullException(nameof(behaviourIfHandle));
         }
 
-        protected override TResult Implementation(Func<Context, CancellationToken, TResult> action, Context context, CancellationToken cancellationToken)
+        protected override TResult SyncGenericImplementation<TExecutable>(in TExecutable action, Context context, CancellationToken cancellationToken)
         {
             return AddBehaviourIfHandleEngine.Implementation(
-                ExceptionPredicates,
-                ResultPredicates,
-                _behaviourIfHandle,
                 action,
                 context,
-                cancellationToken
+                cancellationToken,
+                ExceptionPredicates,
+                ResultPredicates,
+                _behaviourIfHandle
             );
         }
     }

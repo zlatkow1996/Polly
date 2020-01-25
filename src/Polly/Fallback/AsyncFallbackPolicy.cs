@@ -2,7 +2,6 @@
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
-using Polly.Utilities;
 
 namespace Polly.Fallback
 {
@@ -11,8 +10,8 @@ namespace Polly.Fallback
     /// </summary>
     public class AsyncFallbackPolicy : AsyncPolicy, IAsyncFallbackPolicy
     {
-        private Func<Exception, Context, Task> _onFallbackAsync;
-        private Func<Exception, Context, CancellationToken, Task> _fallbackAction;
+        private readonly Func<Exception, Context, Task> _onFallbackAsync;
+        private readonly Func<Exception, Context, CancellationToken, Task> _fallbackAction;
 
         internal AsyncFallbackPolicy(PolicyBuilder policyBuilder, Func<Exception, Context, Task> onFallbackAsync,
             Func<Exception, Context, CancellationToken, Task> fallbackAction)
@@ -23,32 +22,28 @@ namespace Polly.Fallback
         }
 
         /// <inheritdoc/>
-        protected override Task ImplementationAsync(
-            Func<Context, CancellationToken, Task> action,
-            Context context,
-            CancellationToken cancellationToken,
+        protected override Task AsyncNonGenericImplementation<TExecutableAsync>(in TExecutableAsync action, Context context, CancellationToken cancellationToken,
             bool continueOnCapturedContext)
         {
-            return AsyncFallbackEngine.ImplementationAsync<EmptyStruct>(
-                async (ctx, ct) => { await action(ctx, ct).ConfigureAwait(continueOnCapturedContext); return EmptyStruct.Instance; },
+            return AsyncFallbackEngine.ImplementationAsync<TExecutableAsync, object>(
+                action,
                 context,
                 cancellationToken,
+                continueOnCapturedContext, 
                 ExceptionPredicates,
-                ResultPredicates<EmptyStruct>.None,
-                _onFallbackAsync == null ? (Func<DelegateResult<EmptyStruct>, Context, Task>)null : (outcome, ctx) => _onFallbackAsync(outcome.Exception, ctx),
-                async (outcome, ctx, ct) =>
+                ResultPredicates<object>.None,
+                onFallbackAsync: _onFallbackAsync == null ? (Func<DelegateResult<object>, Context, Task>)null : (outcome, ctx) => _onFallbackAsync(outcome.Exception, ctx), 
+                fallbackAction: async (outcome, ctx, ct) =>
                 {
                     await _fallbackAction(outcome.Exception, ctx, ct).ConfigureAwait(continueOnCapturedContext);
-                    return EmptyStruct.Instance;
-                },
-                continueOnCapturedContext);
+                    return null;
+                });
         }
 
         /// <inheritdoc/>
-        protected override Task<TResult> ImplementationAsync<TResult>(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
-            => 
-            throw new InvalidOperationException($"You have executed the generic .Execute<{nameof(TResult)}> method on a non-generic {nameof(FallbackPolicy)}.  A non-generic {nameof(FallbackPolicy)} only defines a fallback action which returns void; it can never return a substitute {nameof(TResult)} value.  To use {nameof(FallbackPolicy)} to provide fallback {nameof(TResult)} values you must define a generic fallback policy {nameof(FallbackPolicy)}<{nameof(TResult)}>.  For example, define the policy as Policy<{nameof(TResult)}>.Handle<Whatever>.Fallback<{nameof(TResult)}>(/* some {nameof(TResult)} value or Func<..., {nameof(TResult)}> */);");
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync, TResult>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
+            => throw new InvalidOperationException($"You have executed the generic .Execute<{nameof(TResult)}> method on a non-generic {nameof(FallbackPolicy)}.  A non-generic {nameof(FallbackPolicy)} only defines a fallback action which returns void; it can never return a substitute {nameof(TResult)} value.  To use {nameof(FallbackPolicy)} to provide fallback {nameof(TResult)} values you must define a generic fallback policy {nameof(FallbackPolicy)}<{nameof(TResult)}>.  For example, define the policy as Policy<{nameof(TResult)}>.Handle<Exception>().Fallback<{nameof(TResult)}>(/* some {nameof(TResult)} value or Func<..., {nameof(TResult)}> */);");
     }
 
     /// <summary>
@@ -57,8 +52,8 @@ namespace Polly.Fallback
     /// <typeparam name="TResult">The return type of delegates which may be executed through the policy.</typeparam>
     public class AsyncFallbackPolicy<TResult> : AsyncPolicy<TResult>, IAsyncFallbackPolicy<TResult>
     {
-        private Func<DelegateResult<TResult>, Context, Task> _onFallbackAsync;
-        private Func<DelegateResult<TResult>, Context, CancellationToken, Task<TResult>> _fallbackAction;
+        private readonly Func<DelegateResult<TResult>, Context, Task> _onFallbackAsync;
+        private readonly Func<DelegateResult<TResult>, Context, CancellationToken, Task<TResult>> _fallbackAction;
 
         internal AsyncFallbackPolicy(
             PolicyBuilder<TResult> policyBuilder,
@@ -72,16 +67,16 @@ namespace Polly.Fallback
 
         /// <inheritdoc/>
         [DebuggerStepThrough]
-        protected override Task<TResult> ImplementationAsync(Func<Context, CancellationToken, Task<TResult>> action, Context context, CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
             => AsyncFallbackEngine.ImplementationAsync(
                 action,
                 context,
                 cancellationToken,
+                continueOnCapturedContext,
                 ExceptionPredicates,
                 ResultPredicates,
                 _onFallbackAsync,
-                _fallbackAction,
-                continueOnCapturedContext);
+                _fallbackAction);
     }
 }

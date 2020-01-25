@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Polly.Specs.Helpers.Custom.AddBehaviourIfHandle
@@ -15,17 +16,17 @@ namespace Polly.Specs.Helpers.Custom.AddBehaviourIfHandle
             _behaviourIfHandle = behaviourIfHandle ?? throw new ArgumentNullException(nameof(behaviourIfHandle));
         }
 
-        protected override Task<TResult> ImplementationAsync<TResult>(Func<Context, System.Threading.CancellationToken, Task<TResult>> action, Context context, System.Threading.CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync, TResult>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
             return AsyncAddBehaviourIfHandleEngine.ImplementationAsync(
-                ExceptionPredicates,
-                ResultPredicates<TResult>.None,
-                outcome => _behaviourIfHandle(outcome.Exception),
                 action,
                 context,
                 cancellationToken,
-                continueOnCapturedContext
+                continueOnCapturedContext,
+                ExceptionPredicates,
+                ResultPredicates<TResult>.None,
+                outcome => _behaviourIfHandle(outcome.Exception)
             );
         }
     }
@@ -43,18 +44,17 @@ namespace Polly.Specs.Helpers.Custom.AddBehaviourIfHandle
 
         }
 
-        protected override Task<TResult> ImplementationAsync(Func<Context, System.Threading.CancellationToken, Task<TResult>> action, Context context, System.Threading.CancellationToken cancellationToken,
-            bool continueOnCapturedContext)
+        protected override Task<TResult> AsyncGenericImplementation<TExecutableAsync>(TExecutableAsync action, Context context,
+            CancellationToken cancellationToken, bool continueOnCapturedContext)
         {
             return AsyncAddBehaviourIfHandleEngine.ImplementationAsync(
-                ExceptionPredicates,
-                ResultPredicates,
-                _behaviourIfHandle,
                 action,
                 context,
                 cancellationToken,
-                continueOnCapturedContext
-            );
+                continueOnCapturedContext,
+                ExceptionPredicates,
+                ResultPredicates,
+                _behaviourIfHandle);
         }
     }
 }

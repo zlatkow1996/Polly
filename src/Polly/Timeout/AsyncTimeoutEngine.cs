@@ -7,14 +7,15 @@ namespace Polly.Timeout
 {
     internal static class AsyncTimeoutEngine
     {
-        internal static async Task<TResult> ImplementationAsync<TResult>(
-            Func<Context, CancellationToken, Task<TResult>> action, 
+        internal static async Task<TResult> ImplementationAsync<TExecutableAsync, TResult>(
+            TExecutableAsync action, 
             Context context, 
             CancellationToken cancellationToken, 
             Func<Context, TimeSpan> timeoutProvider,
             TimeoutStrategy timeoutStrategy,
             Func<Context, TimeSpan, Task, Exception, Task> onTimeoutAsync, 
             bool continueOnCapturedContext)
+            where TExecutableAsync : IAsyncExecutable<TResult>
         {
             cancellationToken.ThrowIfCancellationRequested();
             TimeSpan timeout = timeoutProvider(context);
@@ -31,7 +32,7 @@ namespace Polly.Timeout
                         if (timeoutStrategy == TimeoutStrategy.Optimistic)
                         {
                             SystemClock.CancelTokenAfter(timeoutCancellationTokenSource, timeout);
-                            return await action(context, combinedToken).ConfigureAwait(continueOnCapturedContext);
+                            return await action.ExecuteAsync(context, cancellationToken, continueOnCapturedContext).ConfigureAwait(continueOnCapturedContext);
                         }
 
                         // else: timeoutStrategy == TimeoutStrategy.Pessimistic
@@ -40,7 +41,7 @@ namespace Polly.Timeout
 
                         SystemClock.CancelTokenAfter(timeoutCancellationTokenSource, timeout);
 
-                        actionTask = action(context, combinedToken);
+                        actionTask = action.ExecuteAsync(context, cancellationToken, continueOnCapturedContext);
 
                         return await (await Task.WhenAny(actionTask, timeoutTask).ConfigureAwait(continueOnCapturedContext)).ConfigureAwait(continueOnCapturedContext);
 
