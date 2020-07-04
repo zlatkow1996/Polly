@@ -1,6 +1,6 @@
 # This is a basic workflow to help you get started with Actions
 
-name: CI
+name: Polly CI
 
 # Controls when the action will run. Triggers the workflow on push or pull request
 # events but only for the master branch
@@ -24,6 +24,6 @@ jobs:
     - name: Setup NuGet.exe for use with actions
       uses: NuGet/setup-nuget@v1.0.2
     - name: Restore NuGet Packages
-      run: nuget restore Polly.sln
+      run: nuget restore src/Polly.sln
     - name: Build and Publish Web App
-      run: msbuild Polly.sln /p:Configuration=Release  
+      run: msbuild src/Polly.sln /p:Configuration=Release  
