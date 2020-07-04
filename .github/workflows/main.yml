@@ -25,5 +25,7 @@ jobs:
       uses: NuGet/setup-nuget@v1.0.2
     - name: Restore NuGet Packages
       run: nuget restore src/Polly.sln
+    - name: setup-msbuild
+      uses: microsoft/setup-msbuild@v1
     - name: Build and Publish Web App
       run: msbuild src/Polly.sln /p:Configuration=Release  
